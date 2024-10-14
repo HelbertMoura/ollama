@@ -1,34 +1,36 @@
 import streamlit as st
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from dotenv import load_dotenv, find_dotenv
 from langchain_community.vectorstores import FAISS
-from langchain_community.document_loaders import CSVLoader
 from langchain_core.runnables import RunnablePassthrough
-from langchain_community.chat_models import ChatOllama
-from langchain_community.embeddings import OllamaEmbeddings
+import pandas as pd
 
 # Carrega variáveis de ambiente e chaves de acesso.
 _ = load_dotenv(find_dotenv())
 
-# É necessário ter o Ollama instalado na sua máquina local
-# Ou no servidor que for utilizar.
-
-# No meu caso, estou usando o servidor da Asimov.
+# Configuração do servidor Ollama
 ollama_server_url = "http://localhost:11434" 
 model_local = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
 
 @st.cache_data
 def load_csv_data():    
-    # Substituia aqui por sua base de conhecimentos.
-    loader = CSVLoader(file_path="https://docs.google.com/spreadsheets/d/1uN2Si5WBuhtng2ptB8I4KWz0QpH5T5P2N3j9Ixhk0mM/edit?usp=sharing")
+    # Substituir pelo link CSV exportado do Google Sheets
+    link_csv = "https://docs.google.com/spreadsheets/d/1uN2Si5WBuhtng2ptB8I4KWz0QpH5T5P2N3j9Ixhk0mM/export?format=csv"
+
+    # Carregar dados da planilha diretamente como CSV
+    df = pd.read_csv(link_csv)
+
+    # Exibir alguns dados para verificar o carregamento
+    st.write("Dados carregados:", df.head())
 
     # No mesmo servidor, uso também um modelo de Embedding
     embeddings = OllamaEmbeddings(base_url=ollama_server_url,
                                 model='nomic-embed-text')
-    documents = loader.load()
+
+    # Carregar documentos e embeddings (Ajustar conforme a estrutura do CSV)
+    documents = df.to_dict(orient="records")
     vectorstore = FAISS.from_documents(documents, embeddings)
     retriever = vectorstore.as_retriever()
     return retriever
@@ -36,7 +38,6 @@ def load_csv_data():
 
 retriever = load_csv_data()
 st.title("Oráculo - Asimov Academy")
-
 
 # Configuração do prompt e do modelo
 rag_template = """
@@ -86,4 +87,3 @@ if user_input := st.chat_input("Você:"):
 
     # Salva a resposta completa no histórico
     st.session_state.messages.append({"role": "assistant", "content": full_response})
-    
