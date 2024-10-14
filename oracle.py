@@ -6,6 +6,11 @@ from langchain.vectorstores import FAISS
 from langchain.schema import Document  # Usando o schema correto de langchain
 from langchain_ollama import ChatOllama
 import pandas as pd
+import streamlit as st
+import pandas as pd
+from langchain.schema import Document
+from langchain.vectorstores import FAISS
+from langchain_ollama import OllamaEmbeddings
 # Carrega variáveis de ambiente e chaves de acesso.
 _ = load_dotenv(find_dotenv())
 
@@ -14,31 +19,40 @@ ollama_server_url = "http://localhost:11434"
 model_local = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
 
 @st.cache_data
-def load_csv_data():    
-    # Link direto para o arquivo CSV no GitHub
-    github_csv_url = "https://raw.githubusercontent.com/HelbertMoura/ollama/refs/heads/main/knowledge_base.csv"
-                       
+def load_csv_data():
+    github_csv_url = "https://raw.githubusercontent.com/HelbertMoura/ollama/main/knowledge_base.csv"
+    try:
+        df = pd.read_csv(github_csv_url)
+        st.write("Dados carregados:", df.head())
 
-    # Carregar dados do CSV do GitHub
-    df = pd.read_csv(github_csv_url)
+        # Verifica se as colunas 'pergunta' e 'resposta' existem
+        if 'pergunta' not in df.columns or 'resposta' not in df.columns:
+            st.error("O CSV deve conter as colunas 'pergunta' e 'resposta'.")
+            return None
+        
+        # Cria os documentos, ignorando linhas com valores ausentes
+        documents = []
+        for _, row in df.iterrows():
+            pergunta = row.get('pergunta')
+            resposta = row.get('resposta')
+            if pd.notna(pergunta) and pd.notna(resposta):
+                documents.append(Document(page_content=pergunta, metadata={"resposta": resposta}))
 
-    # Exibir alguns dados para verificar o carregamento
-    st.write("Dados carregados:", df.head())
+        # Certifique-se de que o Ollama está funcionando e que o modelo existe
+        embeddings = OllamaEmbeddings(base_url="http://localhost:11434", model='nomic-embed-text')
+        
+        # Criar o vectorstore com FAISS
+        vectorstore = FAISS.from_documents(documents, embeddings)
+        retriever = vectorstore.as_retriever()
+        return retriever
+    except Exception as e:
+        st.error(f"Ocorreu um erro: {e}")
+        return None
 
-    # Criar documentos com o atributo `page_content`
-    documents = [Document(page_content=row['pergunta'], metadata={"resposta": row['resposta']}) for _, row in df.iterrows()]
-
-    # No mesmo servidor, uso também um modelo de Embedding
-    embeddings = OllamaEmbeddings(base_url=ollama_server_url,
-                                  model='nomic-embed-text')
-
-    # Criar o vectorstore com FAISS
-    vectorstore = FAISS.from_documents(documents, embeddings)
-    retriever = vectorstore.as_retriever()
-    return retriever
-
-# Chamar a função de carregar os dados
+# Chamar a função para carregar os dados
 retriever = load_csv_data()
+if retriever is not None:
+    st.write("Retriever carregado com sucesso.")
 
 # Restante do código para o chatbot
 st.title("Oráculo - Asimov Academy")
