@@ -17,7 +17,7 @@ model_local = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
 @st.cache_data
 def load_csv_data():    
     # Link direto para o arquivo CSV no GitHub
-    github_csv_url = "https://raw.githubusercontent.com/username/repository/main/arquivo.csv"
+    github_csv_url = "https://raw.githubusercontent.com/HelbertMoura/ollama/refs/heads/main/knowledge_base.csv?token=GHSAT0AAAAAACY6GKQPGDCNYCO3R2HEOGTMZYNNSVA"
 
     # Carregar dados do CSV do GitHub
     df = pd.read_csv(github_csv_url)
