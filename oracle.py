@@ -4,6 +4,7 @@ from langchain.embeddings import OllamaEmbeddings
 from dotenv import load_dotenv, find_dotenv
 from langchain.vectorstores import FAISS
 from langchain.schema import Document  # Usando o schema correto de langchain
+from langchain_ollama import ChatOllama
 import pandas as pd
 # Carrega variáveis de ambiente e chaves de acesso.
 _ = load_dotenv(find_dotenv())
