@@ -1,61 +1,42 @@
 import streamlit as st
-from langchain.prompts import ChatPromptTemplate
-from langchain.embeddings import OllamaEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama, OllamaEmbeddings
+
 from dotenv import load_dotenv, find_dotenv
-from langchain.vectorstores import FAISS
-from langchain.schema import Document  # Usando o schema correto de langchain
-from langchain_ollama import ChatOllama
-import pandas as pd
-import streamlit as st
-import pandas as pd
-from langchain.schema import Document
-from langchain.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import CSVLoader
+from langchain_core.runnables import RunnablePassthrough
+from langchain_community.chat_models import ChatOllama
+from langchain_community.embeddings import OllamaEmbeddings
+
 # Carrega variáveis de ambiente e chaves de acesso.
 _ = load_dotenv(find_dotenv())
 
-# Configuração do servidor Ollama
+# É necessário ter o Ollama instalado na sua máquina local
+# Ou no servidor que for utilizar.
+
+# No meu caso, estou usando o servidor da Asimov.
 ollama_server_url = "http://localhost:11434" 
 model_local = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
 
 @st.cache_data
-def load_csv_data():
-    github_csv_url = "https://raw.githubusercontent.com/HelbertMoura/ollama/main/knowledge_base.csv"
-    try:
-        df = pd.read_csv(github_csv_url)
-        st.write("Dados carregados:", df.head())
+def load_csv_data():    
+    # Substituia aqui por sua base de conhecimentos.
+    loader = CSVLoader(file_path="knowledge_base.csv")
 
-        # Verifica se as colunas 'pergunta' e 'resposta' existem
-        if 'pergunta' not in df.columns or 'resposta' not in df.columns:
-            st.error("O CSV deve conter as colunas 'pergunta' e 'resposta'.")
-            return None
-        
-        # Cria os documentos, ignorando linhas com valores ausentes
-        documents = []
-        for _, row in df.iterrows():
-            pergunta = row.get('pergunta')
-            resposta = row.get('resposta')
-            if pd.notna(pergunta) and pd.notna(resposta):
-                documents.append(Document(page_content=pergunta, metadata={"resposta": resposta}))
+    # No mesmo servidor, uso também um modelo de Embedding
+    embeddings = OllamaEmbeddings(base_url=ollama_server_url,
+                                model='nomic-embed-text')
+    documents = loader.load()
+    vectorstore = FAISS.from_documents(documents, embeddings)
+    retriever = vectorstore.as_retriever()
+    return retriever
 
-        # Certifique-se de que o Ollama está funcionando e que o modelo existe
-        embeddings = OllamaEmbeddings(base_url="http://localhost:11434", model='nomic-embed-text')
-        
-        # Criar o vectorstore com FAISS
-        vectorstore = FAISS.from_documents(documents, embeddings)
-        retriever = vectorstore.as_retriever()
-        return retriever
-    except Exception as e:
-        st.error(f"Ocorreu um erro: {e}")
-        return None
 
-# Chamar a função para carregar os dados
 retriever = load_csv_data()
-if retriever is not None:
-    st.write("Retriever carregado com sucesso.")
-
-# Restante do código para o chatbot
 st.title("Oráculo - Asimov Academy")
+
 
 # Configuração do prompt e do modelo
 rag_template = """
@@ -105,3 +86,4 @@ if user_input := st.chat_input("Você:"):
 
     # Salva a resposta completa no histórico
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+    
