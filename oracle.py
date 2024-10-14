@@ -6,7 +6,13 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.schema import Document  # Import para criar a estrutura de documentos
 import pandas as pd
-
+import streamlit as st
+from langchain.prompts import ChatPromptTemplate
+from langchain.embeddings import OllamaEmbeddings
+from dotenv import load_dotenv, find_dotenv
+from langchain.vectorstores import FAISS
+from langchain.schema import Document  # Usando o schema correto de langchain
+import pandas as pd
 # Carrega variáveis de ambiente e chaves de acesso.
 _ = load_dotenv(find_dotenv())
 
