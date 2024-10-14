@@ -23,7 +23,7 @@ model_local = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
 @st.cache_data
 def load_csv_data():    
     # Substituia aqui por sua base de conhecimentos.
-    loader = CSVLoader(file_path="knowledge_base.csv")
+    loader = CSVLoader(file_path="https://docs.google.com/spreadsheets/d/1uN2Si5WBuhtng2ptB8I4KWz0QpH5T5P2N3j9Ixhk0mM/edit?usp=sharing")
 
     # No mesmo servidor, uso também um modelo de Embedding
     embeddings = OllamaEmbeddings(base_url=ollama_server_url,
