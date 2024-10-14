@@ -4,6 +4,7 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 from dotenv import load_dotenv, find_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.schema import Document  # Import para criar a estrutura de documentos
 import pandas as pd
 
 # Carrega variáveis de ambiente e chaves de acesso.
@@ -16,7 +17,7 @@ model_local = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
 @st.cache_data
 def load_csv_data():    
     # Link direto para o arquivo CSV no GitHub
-    github_csv_url = "https://raw.githubusercontent.com/HelbertMoura/ollama/refs/heads/main/knowledge_base.csv?token=GHSAT0AAAAAACY6GKQPGDCNYCO3R2HEOGTMZYNNSVA"
+    github_csv_url = "https://raw.githubusercontent.com/username/repository/main/arquivo.csv"
 
     # Carregar dados do CSV do GitHub
     df = pd.read_csv(github_csv_url)
@@ -24,12 +25,14 @@ def load_csv_data():
     # Exibir alguns dados para verificar o carregamento
     st.write("Dados carregados:", df.head())
 
+    # Criar documentos com o atributo `page_content`
+    documents = [Document(page_content=row['pergunta'], metadata={"resposta": row['resposta']}) for _, row in df.iterrows()]
+
     # No mesmo servidor, uso também um modelo de Embedding
     embeddings = OllamaEmbeddings(base_url=ollama_server_url,
                                   model='nomic-embed-text')
 
-    # Carregar documentos e embeddings (Ajustar conforme a estrutura do CSV)
-    documents = df.to_dict(orient="records")
+    # Criar o vectorstore com FAISS
     vectorstore = FAISS.from_documents(documents, embeddings)
     retriever = vectorstore.as_retriever()
     return retriever
