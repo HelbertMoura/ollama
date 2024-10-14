@@ -8,3 +8,8 @@ langchain-groq
 faiss-cpu
 langchain-community
 faiss-cpu
+langchain
+langchain-community
+faiss-cpu
+streamlit
+python-dotenv
