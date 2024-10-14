@@ -1,7 +1,6 @@
 import streamlit as st
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama, OllamaEmbeddings
-
 from dotenv import load_dotenv, find_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain_core.runnables import RunnablePassthrough
@@ -16,18 +15,18 @@ model_local = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
 
 @st.cache_data
 def load_csv_data():    
-    # Substituir pelo link CSV exportado do Google Sheets
-    link_csv = "https://docs.google.com/spreadsheets/d/1uN2Si5WBuhtng2ptB8I4KWz0QpH5T5P2N3j9Ixhk0mM/export?format=csv"
+    # Link direto para o arquivo CSV no GitHub
+    github_csv_url = "https://raw.githubusercontent.com/HelbertMoura/ollama/refs/heads/main/knowledge_base.csv?token=GHSAT0AAAAAACY6GKQPGDCNYCO3R2HEOGTMZYNNSVA"
 
-    # Carregar dados da planilha diretamente como CSV
-    df = pd.read_csv(link_csv)
+    # Carregar dados do CSV do GitHub
+    df = pd.read_csv(github_csv_url)
 
     # Exibir alguns dados para verificar o carregamento
     st.write("Dados carregados:", df.head())
 
     # No mesmo servidor, uso também um modelo de Embedding
     embeddings = OllamaEmbeddings(base_url=ollama_server_url,
-                                model='nomic-embed-text')
+                                  model='nomic-embed-text')
 
     # Carregar documentos e embeddings (Ajustar conforme a estrutura do CSV)
     documents = df.to_dict(orient="records")
@@ -35,8 +34,10 @@ def load_csv_data():
     retriever = vectorstore.as_retriever()
     return retriever
 
-
+# Chamar a função de carregar os dados
 retriever = load_csv_data()
+
+# Restante do código para o chatbot
 st.title("Oráculo - Asimov Academy")
 
 # Configuração do prompt e do modelo
