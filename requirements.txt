@@ -5,3 +5,4 @@ langchain-ollama
 faiss-cpu
 python-dotenv
 langchain-groq
+faiss-cpu
