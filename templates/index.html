@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot MgData</title>
+    <!-- Google Fonts: Roboto for a clean and modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .main-container {
+            display: flex;
+            height: 90vh;
+            width: 90vw;
+            max-width: 1200px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .history-container {
+            width: 30%;
+            background-color: #f8f9fa;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .history-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #004085;
+            margin-bottom: 20px;
+        }
+
+        .history-item {
+            margin-bottom: 15px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .history-item:hover {
+            background-color: #e2e6ea;
+        }
+
+        .container {
+            flex: 1;
+            padding: 40px;
+            position: relative;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #004085;
+            font-weight: 700;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 130px);
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 16px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-left: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .response, .chart-container {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+            text-align: left;
+        }
+
+        .response {
+            font-size: 18px;
+            color: #495057;
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #007bff;
+        }
+
+        .footer {
+            margin-top: auto;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .robot-image {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            width: 80px;
+            height: auto;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #007bff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="history-container">
+            <div class="history-title">Histórico de Conversas</div>
+            <div id="history"></div>
+        </div>
+
+        <div class="container">
+            <div class="logo-container">
+                <img src="https://mgdata.com.br/site/wp-content/uploads/2020/11/mgdatalogo.png" alt="MGData" style="width: 150px; margin-bottom: 20px;">
+            </div>
+
+            <h1>Bem-vindo ao MgChat!</h1>
+            <p>Sou o Kumo, aqui para ajudar você. Pergunte-me algo!</p>
+
+            <form id="chat-form" style="display: flex; align-items: center;">
+                <input type="text" id="message" name="message" placeholder="Digite sua mensagem">
+                <button type="submit">Enviar</button>
+            </form>
+
+            <div class="response" id="response"></div>
+            <div class="chart-container" id="chart-container"></div>
+
+            <div class="footer">
+                <p>Para mais informações, visite o <a href="https://mgdata.com.br/site/">site da MGData</a> ou entre em contato pelo <a href="mailto:[email protected]">email</a>.</p>
+            </div>
+        </div>
+    </div>
+
+    <img src="https://i.ibb.co/4Wf1TyC/DALL-E-2024-10-18-11-26-10-A-cartoonish-friendly-robot-designed-for-a-chatbot-interface-with-a-round.png" alt="MgRobot" class="robot-image">
+
+    <script>
+        const historyContainer = document.getElementById('history');
+        let conversationHistory = [];
+
+        document.getElementById('chat-form').onsubmit = async function (e) {
+            e.preventDefault();
+            const message = document.getElementById('message').value.trim();
+            if (!message) {
+                alert("Por favor, insira uma mensagem.");
+                return;
+            }
+            document.getElementById('response').innerHTML = '<div class="loading-spinner"></div> Carregando...';
+            document.getElementById('chart-container').innerHTML = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message }),
+                });
+
+                const data = await response.json();
+                document.getElementById('response').innerHTML = data.response;
+
+                conversationHistory.push({ question: message, answer: data.response });
+                updateHistory();
+            } catch (error) {
+                document.getElementById('response').textContent = "Desculpe, ocorreu um erro. Tente novamente.";
+            }
+
+            // Limpar o campo de mensagem
+            document.getElementById('message').value = '';
+        };
+
+        function updateHistory() {
+            historyContainer.innerHTML = '';
+            conversationHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `<strong>Pergunta:</strong> ${item.question}<br><strong>Resposta:</strong> ${item.answer}`;
+
+                // Reenviar a consulta ao clicar no histórico
+                historyItem.addEventListener('click', () => {
+                    document.getElementById('message').value = item.question;
+                    document.getElementById('chat-form').onsubmit(new Event('submit'));
+                });
+
+                historyContainer.appendChild(historyItem);
+            });
+        }
+    </script>
+</body>
+</html>
