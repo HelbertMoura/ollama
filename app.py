@@ -102,7 +102,7 @@ def chat():
         }
         headers = {'Content-Type': 'application/json'}
 
-        response = requests.post(OLLAMA_SERVER_URL, json=payload, headers=headers, stream=True)
+        response = requests.post(OLLAMA_SERVER_URL, json=payload, headers=headers, stream=True, timeout=300)
         response.raise_for_status()
 
         # Coletar a resposta incremental do servidor Ollama
@@ -145,13 +145,13 @@ def chat():
                 # Melhorar a apresentação dos resultados em HTML com nome e CPF
                 resposta = "<div class='result-container'><h3>Pacientes atendidos:</h3><ul class='patient-list'>"
                 for row in resultado_banco:
-                    nome = row[1] if row[1] and row[1] != '\x00' else "Nome não informado"  # Garantir que o nome do paciente seja exibido ou "Nome não informado" caso não exista
+                    nome = row[0] if len(row) > 0 and row[0] and row[0] != '\x00' else "Nome não informado"  # Garantir que o nome do paciente seja exibido ou "Nome não informado" caso não exista
                     resposta += f"<li class='patient-item'><span class='patient-icon'>✔️</span> {nome}</li>"
                 resposta += "</ul></div>"
 
                 # Gerar gráfico de atendimentos se houver dados suficientes
                 if len(resultado_banco) > 1:
-                    labels = [row[1] if row[1] and row[1] != '\x00' else "Nome não informado" for row in resultado_banco]
+                    labels = [row[0] if len(row) > 0 and row[0] and row[0] != '\x00' else "Nome não informado" for row in resultado_banco]
                     values = [1 for _ in resultado_banco]
                     plt.figure(figsize=(10, 6))
                     plt.bar(range(len(labels)), values, tick_label=labels, color='skyblue')
